@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kalkulator Neo-Retro Arcade</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Orbitron:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Orbitron', sans-serif;
+            background: linear-gradient(45deg, #0f0c29, #302b63, #24243e);
+            color: #e0e0e0;
+            overflow: hidden; /* Mencegah scrollbar dari glow effects */
+        }
+
+        .font-pixel {
+            font-family: 'Press+Start+2P', cursive;
+        }
+
+        /* Futuristic Calculator Container */
+        .calculator-body {
+            background-color: rgba(10, 20, 40, 0.85); /* Deep space blue, semi-transparent */
+            border: 2px solid #00ffff; /* Cyan border */
+            box-shadow: 0 0 15px #00ffff, 0 0 30px #00ffff, inset 0 0 10px rgba(0, 255, 255, 0.3);
+            border-radius: 12px; /* Slightly more rounded */
+            padding: 20px;
+            width: 100%;
+            max-width: 360px; /* Slightly wider for better feel */
+        }
+
+        /* Display Styling */
+        .calculator-display {
+            background-color: #000; /* Pure black for high contrast */
+            color: #33ff33; /* Bright neon green */
+            border: 2px solid #33ff33;
+            box-shadow: inset 0 0 10px rgba(51, 255, 51, 0.5), 0 0 5px rgba(51, 255, 51, 0.3);
+            padding: 15px;
+            height: 80px; /* Fixed height */
+            border-radius: 8px;
+            overflow-y: hidden; /* Prevent vertical scroll */
+            overflow-x: auto;  /* Allow horizontal scroll for long numbers */
+            scrollbar-width: thin;
+            scrollbar-color: #33ff33 #000;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end; /* Align text to right */
+            transition: box-shadow 0.3s ease;
+        }
+        .calculator-display:focus-within { /* Glow when active (though it's a div) */
+             box-shadow: inset 0 0 15px rgba(51, 255, 51, 0.7), 0 0 10px rgba(51, 255, 51, 0.5);
+        }
+        .calculator-display span {
+            white-space: nowrap; /* Prevent text wrapping */
+            font-size: 2rem; /* Default size */
+        }
+
+        /* Button Styling */
+        .calc-btn {
+            border: 1px solid transparent;
+            border-radius: 8px;
+            font-size: 1.25rem; /* Slightly larger font on buttons */
+            font-weight: 500; /* Orbitron font weight */
+            padding: 15px 10px; /* Uniform padding */
+            cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32"><circle cx="16" cy="16" r="10" fill="%2300ffff" opacity="0.5"/><path d="M16,0L20,12L32,16L20,20L16,32L12,20L0,16L12,12Z" fill="%2300ffff"/></svg>') 16 16, auto; /* Futuristic cursor */
+            transition: all 0.15s ease-out;
+            position: relative; /* For pseudo-elements if needed */
+            color: #e0e0e0;
+        }
+
+        .calc-btn:active {
+            transform: translateY(2px) scale(0.98);
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+        }
+
+        /* Number Buttons */
+        .btn-number {
+            background-color: rgba(40, 50, 80, 0.9); /* Darker blue-purple */
+            border-color: rgba(0, 180, 180, 0.5);
+        }
+        .btn-number:hover {
+            background-color: rgba(50, 60, 100, 1);
+            border-color: #00ffff;
+            box-shadow: 0 0 8px #00ffff;
+        }
+
+        /* Operator Buttons */
+        .btn-operator {
+            background-color: rgba(100, 60, 150, 0.9); /* Purple-ish */
+            border-color: rgba(200, 0, 200, 0.5);
+            color: #ffccff;
+        }
+        .btn-operator:hover {
+            background-color: rgba(120, 70, 170, 1);
+            border-color: #ff00ff;
+            box-shadow: 0 0 8px #ff00ff;
+        }
+
+        /* Function Buttons (AC, DEL) */
+        .btn-function {
+            background-color: rgba(150, 50, 50, 0.9); /* Red-ish */
+            border-color: rgba(255, 100, 100, 0.5);
+            color: #ffdddd;
+        }
+        .btn-function:hover {
+            background-color: rgba(170, 60, 60, 1);
+            border-color: #ff6666;
+            box-shadow: 0 0 8px #ff6666;
+        }
+
+        /* Equals Button */
+        .btn-equals {
+            background-color: rgba(50, 150, 50, 0.9); /* Green-ish */
+            border-color: rgba(100, 255, 100, 0.5);
+            color: #ddffdd;
+        }
+        .btn-equals:hover {
+            background-color: rgba(60, 170, 60, 1);
+            border-color: #66ff66;
+            box-shadow: 0 0 10px #66ff66;
+        }
+
+        /* Mute button style */
+        #mute-btn {
+            background-color: rgba(70, 70, 110, 0.8);
+            border: 1px solid #7f7f9f;
+            color: #c0c0ff;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        #mute-btn:hover {
+            background-color: rgba(90, 90, 130, 1);
+            border-color: #a0a0ff;
+            box-shadow: 0 0 5px #a0a0ff;
+        }
+        /* For scanline effect on display (optional) */
+        .scanline-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none; /* Allows clicks to pass through */
+            background: linear-gradient(
+                to bottom,
+                rgba(20, 20, 40, 0) 0%,
+                rgba(20, 20, 40, 0) 48%,
+                rgba(0, 0, 0, 0.2) 50%,
+                rgba(20, 20, 40, 0) 52%,
+                rgba(20, 20, 40, 0) 100%
+            );
+            background-size: 100% 4px; /* Adjust scanline thickness and spacing */
+            opacity: 0.3;
+            border-radius: 8px; /* Match display border-radius */
+        }
+
+        /* Responsive font size for display */
+        @media (max-width: 320px) {
+            .calculator-display span {
+                font-size: 1.75rem;
+            }
+            .calc-btn {
+                font-size: 1rem;
+                padding: 12px 8px;
+            }
+        }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-center min-h-screen p-2">
+
+    <div id="calculator-container" class="calculator-body">
+        <div class="calculator-display mb-5 relative">
+            <span id="display" class="font-pixel">0</span>
+            <div class="scanline-overlay"></div> </div>
+
+        <div class="grid grid-cols-4 gap-3">
+            <button data-action="clear" class="calc-btn btn-function col-span-2">AC</button>
+            <button data-action="delete" class="calc-btn btn-function">DEL</button>
+            <button data-operator="divide" data-key="/" class="calc-btn btn-operator">/</button>
+
+            <button data-number="7" data-key="7" class="calc-btn btn-number">7</button>
+            <button data-number="8" data-key="8" class="calc-btn btn-number">8</button>
+            <button data-number="9" data-key="9" class="calc-btn btn-number">9</button>
+            <button data-operator="multiply" data-key="*" class="calc-btn btn-operator">*</button>
+
+            <button data-number="4" data-key="4" class="calc-btn btn-number">4</button>
+            <button data-number="5" data-key="5" class="calc-btn btn-number">5</button>
+            <button data-number="6" data-key="6" class="calc-btn btn-number">6</button>
+            <button data-operator="subtract" data-key="-" class="calc-btn btn-operator">-</button>
+
+            <button data-number="1" data-key="1" class="calc-btn btn-number">1</button>
+            <button data-number="2" data-key="2" class="calc-btn btn-number">2</button>
+            <button data-number="3" data-key="3" class="calc-btn btn-number">3</button>
+            <button data-operator="add" data-key="+" class="calc-btn btn-operator">+</button>
+
+            <button data-number="0" data-key="0" class="calc-btn btn-number col-span-2">0</button>
+            <button data-action="decimal" data-key="." class="calc-btn btn-number">.</button>
+            <button data-action="equals" data-key="=" data-key-alt="Enter" class="calc-btn btn-equals">=</button>
+        </div>
+    </div>
+
+    <button id="mute-btn" class="mt-6 font-pixel text-xs">SOUND: ON</button>
+
+    <audio id="click-sound" src="Audio/click.mp3" preload="auto"></audio>
+    <audio id="operator-sound" src="Audio/sword.mp3" preload="auto"></audio>
+    <audio id="equals-sound" src="Audio/equals.mp3" preload="auto"></audio>
+    <audio id="error-sound" src="Audio/clear.mp3" preload="auto"></audio>
+    <audio id="clear-sound" src="Audio/error.mp3" preload="auto"></audio>
+
+    <script>
+        const displayElement = document.getElementById('display');
+        const buttons = document.querySelectorAll('.calc-btn');
+        const muteButton = document.getElementById('mute-btn');
+
+        // Sound elements
+        const sounds = {
+            click: document.getElementById('click-sound'),
+            operator: document.getElementById('operator-sound'),
+            equals: document.getElementById('equals-sound'),
+            error: document.getElementById('error-sound'),
+            clear: document.getElementById('clear-sound')
+        };
+        let isMuted = false; // Anda bisa simpan ini di localStorage jika mau
+
+        // Calculator State
+        let currentInput = '0';
+        let previousInput = '';
+        let operator = null;
+        let awaitingNextInput = false; // True if an operator was just pressed, waiting for the next number.
+
+        function playSound(soundKey) {
+            if (!isMuted && sounds[soundKey]) {
+                sounds[soundKey].currentTime = 0; // Rewind to start
+                sounds[soundKey].play().catch(e => console.warn("Sound play error:", e)); // Catch play errors
+            }
+        }
+        
+        function updateDisplay() {
+            let displayValue = currentInput;
+            // Batasi panjang tampilan untuk mencegah overflow visual yang ekstrim
+            // Ini hanya untuk tampilan, kalkulasi tetap dengan nilai penuh
+            const maxDisplayLength = 15; 
+            if (displayValue.length > maxDisplayLength) {
+                // Coba tampilkan dalam notasi ilmiah jika terlalu panjang dan angka
+                if (!isNaN(parseFloat(displayValue))) {
+                    displayValue = parseFloat(displayValue).toExponential(maxDisplayLength - 7); // sisakan ruang untuk E+xx
+                } else { // jika bukan angka (mis. error)
+                    displayValue = displayValue.substring(0, maxDisplayLength);
+                }
+            }
+            displayElement.textContent = displayValue;
+
+            // Adjust font size for very long numbers to prevent overflow, if still needed
+            if (displayValue.length > 10 && displayValue.length <= maxDisplayLength) {
+                displayElement.style.fontSize = "1.5rem";
+            } else if (displayValue.length > maxDisplayLength) { // already truncated or scientific
+                displayElement.style.fontSize = "1.3rem";
+            }
+            else {
+                displayElement.style.fontSize = "2rem"; // default size
+            }
+        }
+
+        function handleNumber(number) {
+            playSound('click');
+            if (awaitingNextInput) {
+                currentInput = number;
+                awaitingNextInput = false;
+            } else {
+                currentInput = currentInput === '0' ? number : currentInput + number;
+            }
+        }
+
+        function handleOperator(nextOperator) {
+            playSound('operator');
+            // If there's an existing operator and we aren't just re-clicking an operator
+            // after getting a result, then calculate.
+            if (operator && !awaitingNextInput) {
+                calculate();
+            } else if (currentInput === "Error") { // Don't operate on an error
+                return;
+            }
+            
+            previousInput = currentInput; // Store the current value as previous
+            operator = nextOperator;
+            awaitingNextInput = true; // Set flag that we are waiting for the next number
+        }
+
+        function handleDecimal() {
+            playSound('click');
+            if (awaitingNextInput) { // If an op was just pressed, start new number with "0."
+                currentInput = '0.';
+                awaitingNextInput = false;
+                return;
+            }
+            if (!currentInput.includes('.')) {
+                currentInput += '.';
+            }
+        }
+
+        function handleDelete() {
+            playSound('click');
+            if (awaitingNextInput || currentInput === "Error") return; // Don't delete if waiting or error
+
+            if (currentInput.length > 1) {
+                currentInput = currentInput.slice(0, -1);
+            } else {
+                currentInput = '0'; // If last digit is removed, show '0'
+            }
+        }
+        
+        function handleClear() {
+            playSound('clear');
+            currentInput = '0';
+            previousInput = '';
+            operator = null;
+            awaitingNextInput = false;
+        }
+
+        function calculate() {
+            if (!operator || previousInput === '' || awaitingNextInput) { 
+                // Don't calculate if no operator, no previous input, or if we just pressed an operator and are waiting.
+                return;
+            }
+            
+            let result;
+            const prev = parseFloat(previousInput);
+            const current = parseFloat(currentInput);
+
+            if (isNaN(prev) || isNaN(current)) {
+                currentInput = "Error";
+                playSound('error');
+                updateDisplay();
+                operator = null; // Reset operator to prevent further issues
+                previousInput = '';
+                awaitingNextInput = false; // Reset flag
+                return;
+            }
+
+            switch (operator) {
+                case 'add': result = prev + current; break;
+                case 'subtract': result = prev - current; break;
+                case 'multiply': result = prev * current; break;
+                case 'divide':
+                    if (current === 0) {
+                        currentInput = "DIV/0!";
+                        playSound('error');
+                        updateDisplay();
+                        operator = null;
+                        previousInput = '';
+                        awaitingNextInput = false; // Reset flag
+                        return;
+                    }
+                    result = prev / current;
+                    break;
+                default: return;
+            }
+            
+            // Round to a reasonable number of decimal places to avoid floating point inaccuracies
+            // For example, 0.1 + 0.2 might be 0.30000000000000004
+            result = parseFloat(result.toPrecision(12)); 
+
+            currentInput = result.toString();
+            playSound('equals');
+            operator = null; // Reset operator after calculation for standard calculator behavior
+            previousInput = ''; // previousInput is consumed by the calculation
+            awaitingNextInput = false; // Ready for new input or to chain with this result
+        }
+
+        // Event Listeners for buttons
+        buttons.forEach(button => {
+            button.addEventListener('click', () => {
+                button.classList.add('ring-2', 'ring-offset-2', 'ring-offset-gray-800');
+                if (button.classList.contains('btn-number')) button.classList.add('ring-cyan-400');
+                else if (button.classList.contains('btn-operator')) button.classList.add('ring-purple-400');
+                else if (button.classList.contains('btn-function')) button.classList.add('ring-red-400');
+                else if (button.classList.contains('btn-equals')) button.classList.add('ring-green-400');
+
+                setTimeout(() => {
+                    button.classList.remove('ring-2', 'ring-offset-2', 'ring-offset-gray-800', 'ring-cyan-400', 'ring-purple-400', 'ring-red-400', 'ring-green-400');
+                }, 150);
+
+
+                const action = button.dataset.action;
+                const number = button.dataset.number;
+                const op = button.dataset.operator;
+
+                if (number) handleNumber(number);
+                if (op) handleOperator(op);
+                if (action === 'decimal') handleDecimal();
+                if (action === 'clear') handleClear();
+                if (action === 'delete') handleDelete();
+                if (action === 'equals') {
+                    // Only calculate if there is something to calculate
+                    if (operator && previousInput !== '') {
+                        calculate();
+                    } else {
+                        // If equals is pressed without a pending operation, 
+                        // but there's a current input, just play a sound or do nothing.
+                        // Or, if a result is already shown, pressing equals again might repeat last op (advanced)
+                        // For now, just ensure it doesn't error.
+                        if (currentInput !== "Error" && currentInput !== "DIV/0!") playSound('click');
+                    }
+                }
+                updateDisplay();
+            });
+        });
+
+        // Keyboard Support
+        document.addEventListener('keydown', (event) => {
+            let targetButton;
+            if (event.key === 'Enter') { // Treat Enter as equals
+                targetButton = document.querySelector(`.calc-btn[data-key-alt="Enter"]`);
+            } else if (event.key === 'Backspace') { // Treat Backspace as DEL
+                targetButton = document.querySelector(`.calc-btn[data-action="delete"]`);
+            } else if (event.key.toLowerCase() === 'c' || event.key === 'Escape') { // C or Escape for AC
+                targetButton = document.querySelector(`.calc-btn[data-action="clear"]`);
+            }
+            else {
+                targetButton = document.querySelector(`.calc-btn[data-key="${event.key}"]`);
+            }
+            
+            if (targetButton) {
+                event.preventDefault(); // Prevent default browser actions for keys like '/' or Enter
+                targetButton.click(); // Simulate click
+                // Visual feedback for keyboard press
+                targetButton.classList.add('scale-110', 'shadow-xl');
+                 setTimeout(() => targetButton.classList.remove('scale-110', 'shadow-xl'), 150);
+            }
+        });
+
+        // Mute Button
+        muteButton.addEventListener('click', () => {
+            isMuted = !isMuted;
+            muteButton.textContent = isMuted ? "SOUND: OFF" : "SOUND: ON";
+            muteButton.style.color = isMuted ? "#ff7777" : "#77ffff"; // Change color on mute
+            if (!isMuted) playSound('click'); // Play a sound when unmuting
+        });
+
+
+        // Initial Display Update
+        updateDisplay();
+        // Set initial mute button text and color
+        muteButton.textContent = isMuted ? "SOUND: OFF" : "SOUND: ON";
+        muteButton.style.color = isMuted ? "#ff7777" : "#77ffff";
+    </script>
+</body>
+</html>
